@@ -7,7 +7,7 @@ import edu.wpi.first.shuffleboard.api.widget.ComponentType;
 import edu.wpi.first.shuffleboard.api.widget.WidgetType;
 
 import com.example.simplewidget.data.type.PointType;
-import com.example.simplewidget.widget.HehehehaWidget;
+import com.example.simplewidget.widget.BetterFieldWidget;
 
 import java.util.List;
 import java.util.Map;
@@ -17,11 +17,11 @@ import java.util.Map;
  */
 @Description(
     group = "com.example",
-    name = "Heheheha",
+    name = "Better Field",
     version = "2019.1.1",
-    summary = "An Heheheha plugin that provides a Heheheha data type and a Heheheha widget for viewing it"
+    summary = "An Better Field plugin that provides a Better Field data type and a Better Field widget for viewing it"
 )
-public final class Heheheha extends Plugin {
+public final class BetterField extends Plugin {
 
   @Override
   public List<DataType> getDataTypes() {
@@ -33,14 +33,14 @@ public final class Heheheha extends Plugin {
   @Override
   public List<ComponentType> getComponents() {
     return List.of(
-        WidgetType.forAnnotatedWidget(HehehehaWidget.class)
+        WidgetType.forAnnotatedWidget(BetterFieldWidget.class)
     );
   }
 
   @Override
   public Map<DataType, ComponentType> getDefaultComponents() {
     return Map.of(
-        PointType.Instance, WidgetType.forAnnotatedWidget(HehehehaWidget.class)
+        PointType.Instance, WidgetType.forAnnotatedWidget(BetterFieldWidget.class)
     );
   }
 }
