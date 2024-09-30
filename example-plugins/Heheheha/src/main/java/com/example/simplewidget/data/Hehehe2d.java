@@ -7,7 +7,7 @@ import java.util.Map;
 /**
  * Represents a single point in two-dimensional space.
  */
-public final class Point2D extends ComplexData<Point2D> {
+public final class Hehehe2d extends ComplexData<Hehehe2d> {
 
   private final double x;
   private final double y;
@@ -18,7 +18,7 @@ public final class Point2D extends ComplexData<Point2D> {
    * @param x the X-coordinate of the point
    * @param y the Y-coordinate of the point
    */
-  public Point2D(double x, double y) {
+  public Hehehe2d(double x, double y) {
     this.x = x;
     this.y = y;
   }
