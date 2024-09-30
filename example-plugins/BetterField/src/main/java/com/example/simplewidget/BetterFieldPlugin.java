@@ -17,11 +17,11 @@ import java.util.Map;
  */
 @Description(
     group = "com.example",
-    name = "Better Field",
+    name = "BetterField",
     version = "2019.1.1",
     summary = "An Better Field plugin that provides a Better Field data type and a Better Field widget for viewing it"
 )
-public final class BetterField extends Plugin {
+public final class BetterFieldPlugin extends Plugin {
 
   @Override
   public List<DataType> getDataTypes() {
