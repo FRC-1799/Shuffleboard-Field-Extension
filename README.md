@@ -7,4 +7,4 @@ To run this, run this line in your Visual Studio Code terminal or in the same di
 
 This will put the plugin inside of Shuffleboards plugin's folder, allowing the plugin to load next time Shuffleboard boots up.
 
-[Here is the link to the Creating a Plugin tutorial]([url](https://docs.wpilib.org/en/stable/docs/software/dashboards/shuffleboard/custom-widgets/creating-plugins.html))
+[Here is the link to the Creating a Plugin tutorial](https://docs.wpilib.org/en/stable/docs/software/dashboards/shuffleboard/custom-widgets/creating-plugins.html)
