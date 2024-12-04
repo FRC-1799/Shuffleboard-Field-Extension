@@ -1,39 +1,295 @@
-pluginManagement {
-    repositories {
-        mavenLocal()
-        gradlePluginPortal()
+package edu.wpi.first.shuffleboard.plugin.base.widget;
+
+import com.google.common.collect.ImmutableList;
+import edu.wpi.first.fields.FieldConfig;
+import edu.wpi.first.fields.Fields;
+import edu.wpi.first.shuffleboard.api.prefs.Group;
+import edu.wpi.first.shuffleboard.api.prefs.Setting;
+import edu.wpi.first.shuffleboard.api.widget.Description;
+import edu.wpi.first.shuffleboard.api.widget.ParametrizedController;
+import edu.wpi.first.shuffleboard.api.widget.SimpleAnnotatedWidget;
+import edu.wpi.first.shuffleboard.plugin.base.data.FieldData;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+
+import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.DoubleProperty;
+import javafx.beans.property.Property;
+import javafx.beans.property.SimpleBooleanProperty;
+import javafx.beans.property.SimpleDoubleProperty;
+import javafx.beans.property.SimpleObjectProperty;
+import javafx.fxml.FXML;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
+import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.Pane;
+import javafx.scene.paint.Color;
+import javafx.scene.paint.Paint;
+import javafx.scene.shape.Circle;
+
+@Description(name = "Field", dataTypes = FieldData.class)
+@SuppressWarnings({"EmptyCatchBlock", "PMD.TooManyFields"})
+@ParametrizedController("FieldWidget.fxml")
+public class FieldWidget extends SimpleAnnotatedWidget<FieldData> {
+  @FXML
+  private Pane root;
+
+  private BorderPane pane;
+
+  @FXML
+  private ImageView backgroundImage;
+
+  private List<ImageView> robots = new ArrayList<>(6);  // List to hold 6 robot image views
+
+  private double imageStartX;
+  private double imageStartY;
+  private double imageEndX;
+  private double imageEndY;
+  private double fieldWidth;
+  private double fieldHeight;
+
+  private final Map<String, Paint> colors = new HashMap<>();
+  private final Map<String, Circle[]> objectCircles = new HashMap<>();
+  private Map<String, FieldData.SimplePose2d[]> previousObjects = new HashMap<>();
+  private final Property<Fields> game = new SimpleObjectProperty<>(Fields.kDefaultField);
+  private final DoubleProperty robotSize = new SimpleDoubleProperty(50);
+  private final BooleanProperty showCirclesOutsideOfField = new SimpleBooleanProperty(false);
+
+  @FXML
+  private void initialize() {
+    setGame(game.getValue());
+    game.addListener(__ -> {
+      setGame(game.getValue());
+      centerImage();
+      updateRobotsPosition();
+      updateObjects(true);
+    });
+
+    // Initialize 6 robot ImageView objects
+    for (int i = 0; i < 6; i++) {
+      ImageView robotImage = new ImageView();
+      robotImage.setImage(new Image(getClass().getResource("field/image.png").toExternalForm()));
+      robotImage.setFitWidth(robotSize.get());
+      robotImage.setFitHeight(robotSize.get());
+      robots.add(robotImage);
     }
-}
 
-include ":api"
-include ":api-test-util"
-include ":app"
-include ":app:test_plugins"
-include "example-plugins"
-include "example-plugins:BetterField"
-include "example-plugins:custom-theme"
-include "integ_test"
-include ":plugins:base"
-include ":plugins:cameraserver"
-include ":plugins:networktables"
-include ":plugins:powerup"
-include "example-plugins:Field-Custom"
+    robotSize.addListener(__ -> {
+      double size = robotSize.get();
+      for (ImageView robotImage : robots) {
+        robotImage.setFitWidth(size);
+        robotImage.setFitHeight(size);
+      }
+      backgroundImage.setFitHeight(root.getHeight() - robotSize.get() / 2);
+      backgroundImage.setFitWidth(root.getWidth() - robotSize.get() / 2);
+      updateRobotsPosition();
+    });
 
-rootProject.children.each {
-    setUpChildProject(it)
-}
+    showCirclesOutsideOfField.addListener(__ -> updateObjects(true));
 
-private void setUpChildProject(ProjectDescriptor project) {
-    /*
-     * Instead of every file being named build.gradle.kts we instead use the name ${project.name}.gradle.kts.
-     * This is much nicer for searching for the file in your IDE.
-     */
-    final String groovyName = "${project.name}.gradle"
-    final String kotlinName = "${project.name}.gradle.kts"
-    project.buildFileName = groovyName
-    if (!project.buildFile.isFile()) {
-        project.buildFileName = kotlinName
+    root.heightProperty().addListener(__ -> {
+      double height = root.getHeight();
+      backgroundImage.setFitHeight(height - robotSize.get() / 2);
+      centerImage();
+      updateRobotsPosition();
+      updateObjects(true);
+    });
+
+    root.widthProperty().addListener(__ -> {
+      double width = root.getWidth();
+      backgroundImage.setFitWidth(width - robotSize.get() / 2);
+      centerImage();
+      updateRobotsPosition();
+      updateObjects(true);
+    });
+
+    dataOrDefault.addListener(__ -> {
+      updateRobotsPosition();
+      updateObjects(false);
+    });
+  }
+
+  private double getActualBackgroundHeight() {
+    return Math.min(backgroundImage.getFitHeight(),
+            backgroundImage.getFitWidth()
+                    * (backgroundImage.getImage().getHeight()
+                    / backgroundImage.getImage().getWidth()));
+  }
+
+  private double getActualBackgroundWidth() {
+    return Math.min(backgroundImage.getFitWidth(),
+            backgroundImage.getFitHeight()
+                    / ((backgroundImage.getImage().getHeight()
+                    / backgroundImage.getImage().getWidth())));
+
+  }
+
+  private void centerImage() {
+    double imageRatio = backgroundImage.getImage().getHeight() / backgroundImage.getImage().getWidth();
+    if (backgroundImage.getFitWidth() * imageRatio
+            < backgroundImage.getFitHeight()) {
+      backgroundImage.setX(robotSize.get() / 4);
+      backgroundImage.setY((backgroundImage.getFitHeight()
+              - backgroundImage.getFitWidth() * imageRatio)
+              / 2
+              + robotSize.get() / 4);
+    } else {
+      backgroundImage.setX((backgroundImage.getFitWidth()
+              - backgroundImage.getFitHeight() / imageRatio)
+              / 2
+              + robotSize.get() / 4);
+      backgroundImage.setY(robotSize.get() / 4);
     }
-    assert project.buildFile.isFile(): "File named $groovyName or $kotlinName must exist."
-    project.children.each { setUpChildProject(it) }
+  }
+
+  private void setGame(Fields field) {
+    try {
+      FieldConfig config = FieldConfig.loadField(field);
+      InputStream imageStream = config.getImageAsStream();
+      Objects.requireNonNull(imageStream);
+
+      Image image = new Image(imageStream);
+      backgroundImage.setImage(image);
+      imageStartX = config.m_fieldCorners.m_topLeft[0];
+      imageEndX = config.m_fieldCorners.m_bottomRight[0];
+      imageStartY = image.getHeight() - config.m_fieldCorners.m_bottomRight[1];
+      imageEndY = image.getHeight() - config.m_fieldCorners.m_topLeft[1];
+
+      fieldWidth = config.m_fieldSize[0];
+      fieldHeight = config.m_fieldSize[1];
+
+      if ("feet".equals(config.m_fieldUnit) || "foot".equals(config.m_fieldUnit)) {
+        fieldWidth  = UltrasonicWidget.Unit.FOOT.as(fieldWidth, UltrasonicWidget.Unit.METER);
+        fieldHeight = UltrasonicWidget.Unit.FOOT.as(fieldHeight, UltrasonicWidget.Unit.METER);
+      }
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  private double transformX(double robotX, double size) {
+    return backgroundImage.getX()
+            + (imageStartX + robotX / fieldWidth * (imageEndX - imageStartX))
+            * getActualBackgroundWidth() / backgroundImage.getImage().getWidth()
+            - size;
+  }
+
+  private double transformY(double robotY, double size) {
+    return backgroundImage.getY() + getActualBackgroundHeight()
+            - (imageStartY + robotY / fieldHeight * (imageEndY - imageStartY))
+                    * getActualBackgroundHeight()
+                    / backgroundImage.getImage().getHeight() - size;
+  }
+
+  private void updateRobotsPosition() {
+    FieldData data = dataOrDefault.get();
+    for (int i = 0; i < 6; i++) {
+      if (i < data.getRobots().size()) {
+        FieldData.Robot robotData = data.getRobots().get(i);
+        ImageView robotImage = robots.get(i);
+
+        robotImage.setTranslateX(
+                transformX(robotData.getX(), robotSize.get() / 2));
+        robotImage.setTranslateY(
+                transformY(robotData.getY(), robotSize.get() / 2));
+        robotImage.setRotate(-robotData.getDegrees());
+      }
+    }
+  }
+
+  private void updateObjects(boolean forceUpdateObjects) {
+    var newObjects = dataOrDefault.get().getObjects();
+    for (Map.Entry<String, FieldData.SimplePose2d[]> entry : dataOrDefault.get().getObjects().entrySet()) {
+      String key = entry.getKey();
+      var newObject = entry.getValue();
+
+      if (!forceUpdateObjects && previousObjects.containsKey(key)) {
+        boolean changed = false;
+        var previousObject = previousObjects.get(key);
+        if (previousObject.length == newObject.length) {
+          for (int i = 0; i < previousObject.length; i++) {
+            if (!previousObject[i].equals(newObject[i])) {
+              changed = true;
+              break;
+            }
+          }
+        } else {
+          changed = true;
+        }
+
+        if (!changed) {
+          continue;
+        }
+      }
+
+      for (var circle : objectCircles.getOrDefault(key, new Circle[0])) {
+        pane.getChildren().remove(circle);
+      }
+
+      if (!colors.containsKey(key)) {
+        colors.put(key, Color.valueOf("#ffffff"));
+      }
+
+      var newCircles = new Circle[newObject.length];
+      for (int i = 0; i < newObject.length; i++) {
+        var pose = newObject[i];
+
+        if (!showCirclesOutsideOfField.get() && (
+                pose.getX() < 0
+                || pose.getY() < 0
+                || pose.getX() > fieldWidth
+                || pose.getY() > fieldHeight)) {
+          continue;
+        }
+
+        Paint paint;
+        try {
+          paint = colors.get(key);
+        } catch (Exception ignored) {
+          paint = Paint.valueOf("#ffffff");
+        }
+
+        newCircles[i] = new Circle(transformX(pose.getX(), 1.25),
+                transformY(pose.getY(), 1.25), 2.5,
+                paint);
+
+        pane.getChildren().add(newCircles[i]);
+      }
+      objectCircles.put(key, newCircles);
+    }
+    previousObjects = newObjects;
+  }
+
+  @Override
+  public List<Group> getSettings() {
+    List<Setting<?>> colorSettings = new ArrayList<>();
+    for (Map.Entry<String, Paint> entry : colors.entrySet()) {
+      Property<Paint> property = new SimpleObjectProperty<>(entry.getValue());
+      property.addListener(__ -> {
+        colors.put(entry.getKey(), property.getValue());
+        updateObjects(true);
+      });
+      colorSettings.add(Setting.of(entry.getKey(), property, Color.class));
+    }
+
+    return ImmutableList.of(
+            Group.of("Game", Setting.of("Game", game, Fields.class)),
+            Group.of("Visuals",
+                    Setting.of("Robot Icon Size", robotSize, Double.class),
+                    Setting.of("Show Outside Circles", showCirclesOutsideOfField, Boolean.class)
+            ),
+            Group.of("Colors", colorSettings)
+    );
+  }
+
+  @Override
+  public Pane getView() {
+    return root;
+  }
 }
