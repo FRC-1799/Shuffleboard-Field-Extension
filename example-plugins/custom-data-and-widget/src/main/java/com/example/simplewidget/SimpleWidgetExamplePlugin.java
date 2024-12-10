@@ -7,7 +7,10 @@ import edu.wpi.first.shuffleboard.api.widget.ComponentType;
 import edu.wpi.first.shuffleboard.api.widget.WidgetType;
 
 import com.example.simplewidget.data.type.PointType;
-import com.example.simplewidget.widget.BetterFieldWidget;
+import com.example.simplewidget.widget.SimplePointWidget;
+
+import com.example.simplewidget.data.type.FieldType;
+import com.example.simplewidget.widget.FieldWidget;
 
 import java.util.List;
 import java.util.Map;
@@ -17,30 +20,33 @@ import java.util.Map;
  */
 @Description(
     group = "com.example",
-    name = "BetterField",
+    name = "SimpleWidgetExample",
     version = "2019.1.1",
-    summary = "An Better Field plugin that provides a Better Field data type and a Better Field widget for viewing it"
+    summary = "An example plugin that provides a simple data type and a widget for viewing it"
 )
-public final class BetterFieldPlugin extends Plugin {
+public final class SimpleWidgetExamplePlugin extends Plugin {
 
   @Override
   public List<DataType> getDataTypes() {
     return List.of(
-        PointType.Instance
+        PointType.Instance,
+        FieldType.Instance
     );
   }
 
   @Override
   public List<ComponentType> getComponents() {
     return List.of(
-        WidgetType.forAnnotatedWidget(BetterFieldWidget.class)
+        WidgetType.forAnnotatedWidget(SimplePointWidget.class),
+        WidgetType.forAnnotatedWidget(FieldWidget.class)
     );
   }
 
   @Override
   public Map<DataType, ComponentType> getDefaultComponents() {
     return Map.of(
-        PointType.Instance, WidgetType.forAnnotatedWidget(BetterFieldWidget.class)
+        PointType.Instance, WidgetType.forAnnotatedWidget(SimplePointWidget.class),
+        FieldType.Instance, WidgetType.forAnnotatedWidget(FieldWidget.class)
     );
   }
 }

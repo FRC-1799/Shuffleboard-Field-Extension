@@ -4,19 +4,19 @@ import edu.wpi.first.shuffleboard.api.widget.Description;
 import edu.wpi.first.shuffleboard.api.widget.ParametrizedController;
 import edu.wpi.first.shuffleboard.api.widget.SimpleAnnotatedWidget;
 
-import com.example.simplewidget.data.Field2d;
+import com.example.simplewidget.data.Point2D;
 
 import javafx.fxml.FXML;
 import javafx.scene.control.Label;
 import javafx.scene.layout.Pane;
 
 @Description(
-    name = "BetterField",
-    dataTypes = Field2d.class,
+    name = "Simple Point",
+    dataTypes = Point2D.class,
     summary = "Displays the X and Y coordinates of a point"
 )
-@ParametrizedController("BetterField.fxml")
-public final class BetterFieldWidget extends SimpleAnnotatedWidget<Field2d> {
+@ParametrizedController("SimplePointWidget.fxml")
+public final class SimplePointWidget extends SimpleAnnotatedWidget<Point2D> {
 
   @FXML
   private Pane root;
